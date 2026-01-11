@@ -3,11 +3,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
 import Icon from '@/components/ui/icon';
 
 const Index = () => {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [activeSection, setActiveSection] = useState('home');
+  
+  const [cleaningType, setCleaningType] = useState('standard');
+  const [roomType, setRoomType] = useState('apartment');
+  const [area, setArea] = useState([50]);
+  const [extras, setExtras] = useState<string[]>([]);
 
   const services = [
     {
@@ -72,6 +79,39 @@ const Index = () => {
     element?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const calculatePrice = () => {
+    const basePrices: Record<string, number> = {
+      standard: 30,
+      deep: 45,
+      afterRepair: 60
+    };
+    
+    const roomMultipliers: Record<string, number> = {
+      apartment: 1,
+      office: 1.3,
+      house: 1.5
+    };
+    
+    const extraPrices: Record<string, number> = {
+      windows: 1500,
+      furniture: 2000,
+      balcony: 800
+    };
+    
+    const basePrice = basePrices[cleaningType] * area[0] * roomMultipliers[roomType];
+    const extrasTotal = extras.reduce((sum, extra) => sum + extraPrices[extra], 0);
+    
+    return Math.round(basePrice + extrasTotal);
+  };
+
+  const toggleExtra = (extra: string) => {
+    setExtras(prev => 
+      prev.includes(extra) 
+        ? prev.filter(e => e !== extra)
+        : [...prev, extra]
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white via-muted/20 to-primary/5">
       <nav className="fixed top-0 w-full bg-white/80 backdrop-blur-lg z-50 border-b border-border/40">
@@ -80,7 +120,7 @@ const Index = () => {
             СияниеДом
           </h1>
           <div className="hidden md:flex gap-6">
-            {['home', 'services', 'portfolio', 'about', 'reviews', 'contacts'].map((section) => (
+            {['home', 'services', 'calculator', 'portfolio', 'about', 'reviews', 'contacts'].map((section) => (
               <button
                 key={section}
                 onClick={() => scrollToSection(section)}
@@ -90,6 +130,7 @@ const Index = () => {
               >
                 {section === 'home' && 'Главная'}
                 {section === 'services' && 'Услуги'}
+                {section === 'calculator' && 'Калькулятор'}
                 {section === 'portfolio' && 'Портфолио'}
                 {section === 'about' && 'О нас'}
                 {section === 'reviews' && 'Отзывы'}
@@ -194,7 +235,164 @@ const Index = () => {
         </div>
       </section>
 
-      <section id="portfolio" className="py-20 px-4">
+      <section id="calculator" className="py-20 px-4">
+        <div className="container mx-auto max-w-5xl">
+          <div className="text-center mb-16 animate-fade-in">
+            <h2 className="text-5xl font-bold mb-4">Калькулятор стоимости</h2>
+            <p className="text-xl text-muted-foreground">
+              Рассчитайте примерную стоимость уборки за 1 минуту
+            </p>
+          </div>
+          <Card className="border-2 hover:border-primary/30 transition-all animate-scale-in">
+            <CardContent className="p-8">
+              <div className="grid md:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold flex items-center gap-2">
+                      <Icon name="Sparkles" size={18} className="text-primary" />
+                      Тип уборки
+                    </label>
+                    <Select value={cleaningType} onValueChange={setCleaningType}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="standard">Стандартная уборка (30₽/м²)</SelectItem>
+                        <SelectItem value="deep">Генеральная уборка (45₽/м²)</SelectItem>
+                        <SelectItem value="afterRepair">После ремонта (60₽/м²)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold flex items-center gap-2">
+                      <Icon name="Building" size={18} className="text-secondary" />
+                      Тип помещения
+                    </label>
+                    <Select value={roomType} onValueChange={setRoomType}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="apartment">Квартира</SelectItem>
+                        <SelectItem value="office">Офис (+30%)</SelectItem>
+                        <SelectItem value="house">Дом/Коттедж (+50%)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold flex items-center gap-2">
+                      <Icon name="Ruler" size={18} className="text-accent" />
+                      Площадь: <span className="text-primary">{area[0]} м²</span>
+                    </label>
+                    <Slider
+                      value={area}
+                      onValueChange={setArea}
+                      min={20}
+                      max={300}
+                      step={5}
+                      className="py-4"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>20 м²</span>
+                      <span>300 м²</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-sm font-semibold flex items-center gap-2">
+                      <Icon name="Plus" size={18} className="text-primary" />
+                      Дополнительные услуги
+                    </label>
+                    <div className="space-y-2">
+                      <Button
+                        variant={extras.includes('windows') ? 'default' : 'outline'}
+                        className="w-full justify-between h-12"
+                        onClick={() => toggleExtra('windows')}
+                      >
+                        <span>Мытьё окон</span>
+                        <span className="text-sm">+1500₽</span>
+                      </Button>
+                      <Button
+                        variant={extras.includes('furniture') ? 'default' : 'outline'}
+                        className="w-full justify-between h-12"
+                        onClick={() => toggleExtra('furniture')}
+                      >
+                        <span>Химчистка мебели</span>
+                        <span className="text-sm">+2000₽</span>
+                      </Button>
+                      <Button
+                        variant={extras.includes('balcony') ? 'default' : 'outline'}
+                        className="w-full justify-between h-12"
+                        onClick={() => toggleExtra('balcony')}
+                      >
+                        <span>Балкон/Лоджия</span>
+                        <span className="text-sm">+800₽</span>
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col justify-center">
+                  <div className="bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 rounded-3xl p-8 space-y-6 border-2 border-primary/20">
+                    <div className="text-center space-y-2">
+                      <div className="text-sm text-muted-foreground font-medium">Итоговая стоимость</div>
+                      <div className="text-6xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+                        {calculatePrice().toLocaleString()}₽
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3 pt-4 border-t-2 border-primary/20">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Базовая стоимость:</span>
+                        <span className="font-semibold">
+                          {cleaningType === 'standard' && '30₽/м²'}
+                          {cleaningType === 'deep' && '45₽/м²'}
+                          {cleaningType === 'afterRepair' && '60₽/м²'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Площадь:</span>
+                        <span className="font-semibold">{area[0]} м²</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Коэффициент:</span>
+                        <span className="font-semibold">
+                          {roomType === 'apartment' && '×1.0'}
+                          {roomType === 'office' && '×1.3'}
+                          {roomType === 'house' && '×1.5'}
+                        </span>
+                      </div>
+                      {extras.length > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Доп. услуги:</span>
+                          <span className="font-semibold">{extras.length} шт</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <Button
+                      size="lg"
+                      className="w-full bg-gradient-to-r from-primary to-secondary hover:opacity-90 transition-opacity text-lg h-14"
+                      onClick={() => scrollToSection('contacts')}
+                    >
+                      Заказать уборку
+                      <Icon name="ArrowRight" className="ml-2" size={20} />
+                    </Button>
+                    
+                    <p className="text-xs text-center text-muted-foreground">
+                      * Точная стоимость рассчитывается после осмотра объекта
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section id="portfolio" className="py-20 px-4 bg-white/50 backdrop-blur-sm">
         <div className="container mx-auto">
           <div className="text-center mb-16 animate-fade-in">
             <h2 className="text-5xl font-bold mb-4">Результаты нашей работы</h2>
